@@ -1,3 +1,4 @@
+const express = require("express");  // Ensure Express is imported
 const helmet = require("helmet"); // Security headers
 const cors = require("cors"); // Cross-origin protection
 const morgan = require("morgan"); // Logging
