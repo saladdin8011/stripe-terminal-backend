@@ -28,6 +28,18 @@ app.get("/dashboard", (req, res) => {
         res.status(404).send("dashboard.html not found");
     }
 });
+// ✅ API Key Retrieval Endpoint
+app.get("/get-api-key", (req, res) => {
+  console.log("🔍 API Key Requested from Frontend");
+
+  if (!process.env.API_KEY) {
+      console.error("❌ API_KEY is NOT set in Render!");
+      return res.status(500).json({ error: "API_KEY is not set" });
+  }
+
+  res.json({ apiKey: process.env.API_KEY });
+});
+
 
 // ✅ Authentication Middleware with API Key Debugging
 const authenticate = (req, res, next) => {
