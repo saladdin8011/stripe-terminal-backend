@@ -9,28 +9,20 @@ async function getApiKey() {
     try {
         const response = await fetch("/get-api-key");
         const data = await response.json();
-        
-        console.log("🔍 API Key Response from Backend:", data);
-
-        if (!data.apiKey) {
-            console.error("❌ API key not received from backend.");
-        }
+        console.log("🔍 API Key Response from Backend:", "****" + (data.apiKey ? data.apiKey.slice(-4) : "NONE"));
         return data.apiKey || "";
     } catch (error) {
         console.error("❌ Error fetching API key:", error);
         return "";
     }
 }
+
+// ✅ Securely fetch Reader ID from backend
 async function getReaderId() {
     try {
         const response = await fetch("/get-reader-id");
         const data = await response.json();
-
-        console.log("🔍 Reader ID Response from Backend:", "****" + data.reader_id.slice(-4)); // ✅ Masked in logs
-
-        if (!data.reader_id) {
-            console.error("❌ Reader ID not received from backend.");
-        }
+        console.log("🔍 Reader ID Response from Backend:", "****" + (data.reader_id ? data.reader_id.slice(-4) : "NONE"));
         return data.reader_id || "";
     } catch (error) {
         console.error("❌ Error fetching Reader ID:", error);
@@ -38,7 +30,7 @@ async function getReaderId() {
     }
 }
 
-// ✅ Update Payment Function to Use the Secure Reader ID
+// ✅ Initiate Payment Request
 async function initiatePayment() {
     const amount = document.getElementById("amount").value;
     const statusText = document.getElementById("payment_status");
@@ -52,48 +44,7 @@ async function initiatePayment() {
 
     try {
         const apiKey = await getApiKey();
-        const readerId = await getReaderId(); // ✅ Fetch Secure Reader ID
-
-        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4)); // ✅ Mask API Key in logs
-
-        const response = await fetch("/create_payment_intent", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey
-            },
-            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
-        });
-
-        const result = await response.json();
-        if (result.error) {
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = "✅ Payment request sent to terminal!";
-            document.getElementById("payment_intent_id").value = result.client_secret;
-        }
-    } catch (error) {
-        statusText.innerText = "❌ Network error. Please try again.";
-    }
-}
-
-
-// ✅ Initiate Payment Request
-async function initiatePayment() {
-    const amount = document.getElementById("amount").value;
-    const readerId = document.getElementById("reader_id").value;
-    const statusText = document.getElementById("payment_status");
-
-    if (!amount || !readerId) {
-        statusText.innerText = "❌ Please enter an amount and Reader ID.";
-        return;
-    }
-
-    statusText.innerText = "⌛ Processing payment...";
-
-    try {
-        const apiKey = await getApiKey();
-        console.log("🔍 Sending API Key in request:", apiKey || "None");
+        const readerId = await getReaderId();
 
         const response = await fetch("/create_payment_intent", {
             method: "POST",
@@ -131,7 +82,6 @@ async function processRefund() {
 
     try {
         const apiKey = await getApiKey();
-        console.log("🔍 Sending API Key in refund request:", apiKey || "None");
 
         const response = await fetch("/refund_payment", {
             method: "POST",
@@ -158,19 +108,12 @@ async function processRefund() {
 
 // ✅ Cancel Transaction on POS
 async function cancelTransaction() {
-    const readerId = document.getElementById("reader_id").value;
     const statusText = document.getElementById("cancel_status");
-
-    if (!readerId) {
-        statusText.innerText = "❌ Reader ID is required.";
-        return;
-    }
-
     statusText.innerText = "⌛ Cancelling transaction on POS...";
 
     try {
         const apiKey = await getApiKey();
-        console.log("🔍 Sending Cancel Request to POS:", { reader_id: readerId });
+        const readerId = await getReaderId();
 
         const response = await fetch("/cancel_payment", {
             method: "POST",
