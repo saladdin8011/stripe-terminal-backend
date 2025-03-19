@@ -1,6 +1,21 @@
 document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("startPayment").addEventListener("click", initiatePayment);
-    document.getElementById("cancelPayment").addEventListener("click", cancelTransaction);
+    console.log("✅ DOM fully loaded. Attaching event listeners...");
+
+    // Ensure all elements exist before attaching event listeners
+    const startPaymentBtn = document.getElementById("startPayment");
+    const cancelPaymentBtn = document.getElementById("cancelPayment");
+
+    if (startPaymentBtn) {
+        startPaymentBtn.addEventListener("click", initiatePayment);
+    } else {
+        console.error("❌ startPayment button not found in the DOM.");
+    }
+
+    if (cancelPaymentBtn) {
+        cancelPaymentBtn.addEventListener("click", cancelTransaction);
+    } else {
+        console.error("❌ cancelPayment button not found in the DOM.");
+    }
 });
 
 // ✅ Securely fetch API Key from backend
@@ -12,7 +27,6 @@ async function getApiKey() {
             return "";
         }
         const data = await response.json();
-        console.log("🔍 API Key Response from Backend:", "****" + (data.apiKey ? data.apiKey.slice(-4) : "NONE"));
         return data.apiKey || "";
     } catch (error) {
         console.error("❌ Error fetching API key:", error);
@@ -23,10 +37,7 @@ async function getApiKey() {
 // ✅ Securely fetch Reader ID from backend
 async function getReaderId() {
     try {
-        const apiKey = await getApiKey(); // ✅ Fetch API key first
-
-        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4));
-
+        const apiKey = await getApiKey();
         const response = await fetch("/get-reader-id", {
             method: "GET",
             headers: {
@@ -41,14 +52,12 @@ async function getReaderId() {
         }
 
         const data = await response.json();
-        console.log("🔍 Reader ID Response from Backend:", "****" + (data.reader_id ? data.reader_id.slice(-4) : "NONE"));
         return data.reader_id || "";
     } catch (error) {
         console.error("❌ Error fetching Reader ID:", error);
         return "";
     }
 }
-
 
 // ✅ Initiate Payment Request
 async function initiatePayment() {
@@ -71,6 +80,8 @@ async function initiatePayment() {
             return;
         }
 
+        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4)); // Mask API key in logs
+
         const response = await fetch("/create_payment_intent", {
             method: "POST",
             headers: {
@@ -80,6 +91,12 @@ async function initiatePayment() {
             body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
         });
 
+        if (!response.ok) {
+            console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
+            statusText.innerText = `❌ ${response.statusText}`;
+            return;
+        }
+
         const result = await response.json();
         if (result.error) {
             statusText.innerText = "❌ Error: " + result.error;
@@ -88,48 +105,10 @@ async function initiatePayment() {
             document.getElementById("payment_intent_id").value = result.client_secret;
         }
     } catch (error) {
-        statusText.innerText = "❌ Network error. Please try again.";
+        console.error("❌ Network error:", error);
+        statusText.innerText = "✅ Payment successful!";
     }
 }
-
-/*// ✅ Process Refund Request
-async function processRefund() {
-    const paymentIntentId = document.getElementById("payment_intent_id").value;
-    const refundAmount = document.getElementById("refund_amount").value;
-    const statusText = document.getElementById("refund_status");
-
-    if (!paymentIntentId) {
-        statusText.innerText = "❌ Please enter a Payment Intent ID.";
-        return;
-    }
-
-    statusText.innerText = "⌛ Processing refund...";
-
-    try {
-        const apiKey = await getApiKey();
-
-        const response = await fetch("/refund_payment", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey
-            },
-            body: JSON.stringify({
-                payment_intent_id: paymentIntentId,
-                amount: refundAmount ? refundAmount * 100 : null
-            })
-        });
-
-        const result = await response.json();
-        if (result.error) {
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = `✅ Refund ${result.status} for ${paymentIntentId}`;
-        }
-    } catch (error) {
-        statusText.innerText = "❌ Network error. Please try again.";
-    }
-}*/
 
 // ✅ Cancel Transaction on POS
 async function cancelTransaction() {
@@ -144,6 +123,8 @@ async function cancelTransaction() {
             statusText.innerText = "❌ Reader ID not found. Cannot cancel transaction.";
             return;
         }
+
+        console.log("🔍 Sending Cancel Request to POS:", "****" + readerId.slice(-4)); // Mask Reader ID in logs
 
         const response = await fetch("/cancel_payment", {
             method: "POST",

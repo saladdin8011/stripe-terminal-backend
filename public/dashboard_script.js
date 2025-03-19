@@ -69,7 +69,7 @@ async function initiatePayment() {
         return;
     }
 
-    statusText.innerText = "⌛ Processing payment...";
+    statusText.innerText = "⌛ Payment pending... Waiting for Stripe confirmation.";
 
     try {
         const apiKey = await getApiKey();
@@ -101,12 +101,12 @@ async function initiatePayment() {
         if (result.error) {
             statusText.innerText = "❌ Error: " + result.error;
         } else {
-            statusText.innerText = "✅ Payment request sent to terminal!";
+            statusText.innerText = "✅ Payment request sent to terminal! Waiting for Stripe confirmation...";
             document.getElementById("payment_intent_id").value = result.client_secret;
         }
     } catch (error) {
         console.error("❌ Network error:", error);
-        statusText.innerText = "✅ Payment successful!";
+        statusText.innerText = "❌ Network error. Please try again.";
     }
 }
 
