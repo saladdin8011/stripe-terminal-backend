@@ -66,6 +66,7 @@ async function processRefund() {
 
     if (!paymentIntentId) {
         statusText.innerText = "❌ Please enter a Payment Intent ID.";
+        console.error("❌ Missing Payment Intent ID");
         return;
     }
 
@@ -74,6 +75,7 @@ async function processRefund() {
     try {
         const apiKey = await getApiKey();
         console.log("🔍 Sending API Key in refund request:", apiKey || "None");
+        console.log("🔍 Sending Refund Request to /refund_payment:", { payment_intent_id: paymentIntentId, amount: refundAmount });
 
         const response = await fetch("/refund_payment", {
             method: "POST",
@@ -83,17 +85,26 @@ async function processRefund() {
             },
             body: JSON.stringify({
                 payment_intent_id: paymentIntentId,
-                amount: refundAmount ? refundAmount * 100 : null
+                amount: refundAmount ? parseInt(refundAmount) * 100 : null
             })
         });
 
+        if (!response.ok) {
+            console.error("❌ Refund Request Failed:", response.status, response.statusText);
+            statusText.innerText = `❌ Refund Error: ${response.statusText}`;
+            return;
+        }
+
         const result = await response.json();
         if (result.error) {
+            console.error("❌ Refund Error:", result.error);
             statusText.innerText = "❌ Error: " + result.error;
         } else {
             statusText.innerText = `✅ Refund ${result.status} for ${paymentIntentId}`;
         }
     } catch (error) {
+        console.error("❌ Network error:", error);
         statusText.innerText = "❌ Network error. Please try again.";
     }
 }
+
