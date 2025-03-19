@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Terminal Dashboard</title>
+    <link rel="stylesheet" href="dashboard_styles.css"> <!-- Include the CSS file -->
+</head>
+<body>
+    <div class="container">
+        <h2>Stripe Terminal - Payment Dashboard</h2>
+
+        <!-- Payment Section -->
+        <div class="section">
+            <h3>Initiate Payment</h3>
+            <label for="reader_id">Select Reader:</label>
+            <select id="reader_id">
+                <option value="tmr_xxxxxxxxxxxxxxx">Reader 1</option>
+                <option value="tmr_yyyyyyyyyyyyyy">Reader 2</option>
+            </select>
+
+            <label for="amount">Enter Amount (£):</label>
+            <input type="number" id="amount" placeholder="Enter amount">
+
+            <button onclick="initiatePayment()">Start Payment</button>
+
+            <p id="payment_status"></p>
+        </div>
+
+        <!-- Refund Section -->
+        <div class="section">
+            <h3>Process Refund</h3>
+            <label for="payment_intent_id">Payment Intent ID:</label>
+            <input type="text" id="payment_intent_id" placeholder="Enter Payment Intent ID">
+
+            <label for="refund_amount">Refund Amount (£) (optional):</label>
+            <input type="number" id="refund_amount" placeholder="Full refund if left empty">
+
+            <button onclick="processRefund()">Refund Payment</button>
+
+            <p id="refund_status"></p>
+        </div>
+    </div>
+
+    <script src="dashboard_script.js"></script> <!-- Include JavaScript file -->
+</body>
+</html>
