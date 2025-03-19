@@ -4,6 +4,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const middleware = require("./middleware");
 const path = require("path");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 
 const app = express();
 middleware(app);
@@ -13,9 +14,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.raw({ type: "application/json" })); // Required for webhooks
 app.use(express.static("public")); // Serve static files for CSS & JS
 
+// ✅ Ensure public directory exists
+if (!fs.existsSync("public")) {
+    fs.mkdirSync("public");
+}
+
 // ✅ Serve the Payment Dashboard
 app.get("/dashboard", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+    const filePath = path.join(__dirname, "public", "dashboard.html");
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send("dashboard.html not found");
+    }
 });
 
 // ✅ Authentication Middleware
