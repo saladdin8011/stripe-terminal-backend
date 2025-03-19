@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stripe Terminal Dashboard</title>
-    <link rel="stylesheet" href=dashboard_styles.css"> <!-- ✅ Keep CSS -->
+    <link rel="stylesheet" href="dashboard_styles.css"> <!-- ✅ Keep CSS -->
     <script defer src="dashboard_script.js"></script>
 </head>
 <body>
