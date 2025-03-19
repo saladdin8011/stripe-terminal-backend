@@ -128,6 +128,13 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
     }
 });
 
+console.log("🔍 Checking API_KEY in Environment Variables...");
+if (process.env.API_KEY) {
+    console.log("✅ API_KEY is set in Render.");
+} else {
+    console.error("❌ API_KEY is NOT set in Render! Check environment variables.");
+}
+
 // ✅ Start the server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
