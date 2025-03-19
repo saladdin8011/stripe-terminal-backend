@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("startPayment").addEventListener("click", async function () {
         const amount = document.getElementById("amount").value;
         const statusText = document.getElementById("payment_status");
-        const readerId = "your_reader_id_here"; // Directly assign the reader ID
+        const readerId = "tmr_FT3XAL98tM0XmK"; // Replace with your actual Reader ID
 
         if (!amount) {
             statusText.innerText = "❌ Please enter an amount.";
@@ -15,8 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const response = await fetch("/create_payment_intent", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": "your_secure_api_key_here"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" }) // Convert to pence
             });
@@ -48,8 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const response = await fetch("/refund_payment", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": "your_secure_api_key_here"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     payment_intent_id: paymentIntentId,
