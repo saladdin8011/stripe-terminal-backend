@@ -39,6 +39,30 @@ app.get("/get-api-key", (req, res) => {
 
   res.json({ apiKey: process.env.API_KEY });
 });
+app.post("/refund_payment", authenticate, async (req, res) => {
+  try {
+      let { payment_intent_id, amount } = req.body;
+
+      console.log("🔍 Refund Request Received at /refund_payment:", req.body); // ✅ Log request body
+
+      if (!payment_intent_id) {
+          console.error("❌ Missing Payment Intent ID");
+          return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
+      }
+
+      const refund = await stripe.refunds.create({
+          payment_intent: payment_intent_id,
+          amount: amount ? amount * 100 : undefined, // Ensure correct amount
+      });
+
+      console.log("✅ Refund Successful:", refund); // ✅ Log refund response
+
+      res.json({ refund_id: refund.id, status: refund.status, message: `Refund ${refund.status} for payment intent ${payment_intent_id}` });
+  } catch (error) {
+      console.error("❌ Refund Error:", error); // ✅ Log backend errors
+      res.status(500).json({ error: error.message });
+  }
+});
 
 
 // ✅ Authentication Middleware with API Key Debugging
