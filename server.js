@@ -63,44 +63,39 @@ app.get("/get-api-key", (req, res) => {
     res.json({ apiKey: process.env.API_KEY });
 });
 
-// ✅ Refund a Payment
-app.post("/refund_payment", authenticate, async (req, res) => {
+// ✅ Process a Payment
+app.post("/create_payment_intent", authenticate, async (req, res) => {
     try {
-        let { payment_intent_id, amount } = req.body;
-        console.log("🔍 Refund Request Received:", req.body);
-        
-        if (!payment_intent_id) {
-            console.error("❌ Missing Payment Intent ID");
-            return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
-        }
+        let { amount, currency, reader_id } = req.body;
+        console.log("🔍 Payment Request Received:", req.body);
 
-        const refund = await stripe.refunds.create({
-            payment_intent: payment_intent_id,
-            amount: amount ? amount * 100 : undefined,
+        if (!amount) {
+            return res.status(400).json({ error: "Amount is required" });
+        }
+        if (!currency) {
+            currency = "GBP";
+        }
+        if (!reader_id) {
+            return res.status(400).json({ error: "Reader ID is required to process the payment" });
+        }
+        
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount,
+            currency,
+            payment_method_types: ["card_present"],
+            capture_method: "automatic",
         });
 
-        console.log("✅ Refund Successful:", refund);
-        res.json({ refund_id: refund.id, status: refund.status, message: `Refund ${refund.status} for payment intent ${payment_intent_id}` });
+        const action = await stripe.terminal.readers.processPaymentIntent(reader_id, {
+            payment_intent: paymentIntent.id,
+        });
+
+        console.log("✅ Payment Request Sent to Reader:", action);
+        res.json({ client_secret: paymentIntent.client_secret, reader_action: action, message: "Payment request sent to the WisePOS E reader." });
     } catch (error) {
-        console.error("❌ Refund Error:", error);
+        console.error("❌ Payment Error:", error);
         res.status(500).json({ error: error.message });
     }
-});
-
-// ✅ Check Server Status
-app.get("/", (req, res) => {
-    res.json({
-        message: "Server is running in Render",
-        routes: [
-            { method: "POST", path: "/create_connection_token" },
-            { method: "POST", path: "/create_payment_intent" },
-            { method: "POST", path: "/collect_payment" },
-            { method: "POST", path: "/initiate_payment" },
-            { method: "POST", path: "/refund_payment" },
-            { method: "POST", path: "/webhook" },
-            { method: "GET", path: "/get-api-key" }
-        ]
-    });
 });
 
 // ✅ Start the server
