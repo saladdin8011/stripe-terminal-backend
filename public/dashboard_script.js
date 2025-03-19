@@ -1,48 +1,33 @@
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("startPayment").addEventListener("click", initiatePayment);
-    document.getElementById("refundPayment").addEventListener("click", processRefund);
-    document.getElementById("cancelPayment").addEventListener("click", cancelTransaction); // ✅ New button event listener
-});
-
-// ✅ Cancel an Ongoing Transaction
-async function cancelTransaction() {
-    const paymentIntentId = document.getElementById("payment_intent_id").value;
-    const readerId = document.getElementById("reader_id").value;
-    const statusText = document.getElementById("cancel_status");
-
-    if (!paymentIntentId || !readerId) {
-        statusText.innerText = "❌ Payment Intent ID and Reader ID are required.";
-        console.error("❌ Missing Payment Intent ID or Reader ID");
-        return;
-    }
-
-    statusText.innerText = "⌛ Cancelling transaction...";
-
-    try {
-        const apiKey = await getApiKey();
-        console.log("🔍 Sending Cancel Request:", { payment_intent_id: paymentIntentId, reader_id: readerId });
-
-        const response = await fetch("/cancel_payment", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey
-            },
-            body: JSON.stringify({
-                payment_intent_id: paymentIntentId,
-                reader_id: readerId
-            })
-        });
-
-        const result = await response.json();
-        if (result.error) {
-            console.error("❌ Cancel Error:", result.error);
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = `✅ Transaction Canceled Successfully`;
-        }
-    } catch (error) {
-        console.error("❌ Network error:", error);
-        statusText.innerText = "❌ Network error. Please try again.";
-    }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Terminal Dashboard</title>
+    <link rel="stylesheet" href=dashboard_styles.css"> <!-- ✅ Keep CSS -->
+    <script defer src="dashboard_script.js"></script>
+</head>
+<body>
+    <h1>Stripe Terminal Dashboard</h1>
+    
+    <h2>Process Payment</h2>
+    <label for="amount">Amount (£):</label>
+    <input type="number" id="amount" placeholder="Enter amount">
+    <label for="reader_id">Reader ID:</label>
+    <input type="text" id="reader_id" placeholder="Enter Reader ID">
+    <button id="startPayment">Start Payment</button>
+    <p id="payment_status"></p>
+    
+    <h2>Cancel Transaction on POS</h2>
+    <label for="reader_id">Reader ID:</label>
+    <input type="text" id="reader_id" placeholder="Enter Reader ID">
+    <button id="cancelPayment">Cancel Transaction on POS</button>
+    <p id="cancel_status"></p>
+    
+    <h2>Refund Payment</h2>
+    <label for="refund_amount">Refund Amount (£):</label>
+    <input type="number" id="refund_amount" placeholder="Enter Refund Amount (optional)">
+    <button id="refundPayment">Refund Payment</button>
+    <p id="refund_status"></p>
+</body>
+</html>
