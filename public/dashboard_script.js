@@ -43,7 +43,7 @@ async function initiatePayment() {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey
             },
-            body: JSON.stringify({ reader_id: "tmr_xxxxxxxxxxxxxxx", amount: amount * 100, currency: "GBP" })
+            body: JSON.stringify({ reader_id: "tmr_FT3XAL98tM0XmK", amount: amount * 100, currency: "GBP" })
         });
 
         const result = await response.json();
