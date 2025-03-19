@@ -31,21 +31,26 @@ app.get("/dashboard", (req, res) => {
 
 // ✅ Authentication Middleware with API Key Debugging
 const authenticate = (req, res, next) => {
-    const apiKey = req.headers["x-api-key"];
-    const expectedApiKey = process.env.API_KEY;
-    
-    console.log("🔍 Received API Key:", apiKey || "None"); // Debugging log
-    console.log("🔍 Expected API Key:", expectedApiKey || "Not Set"); // Expected key
+  const apiKey = req.headers["x-api-key"];
+  const expectedApiKey = process.env.API_KEY;
 
-    if (!expectedApiKey) {
-        return res.status(500).json({ error: "Server misconfiguration: API_KEY is not set." });
-    }
-    
-    if (!apiKey || apiKey !== expectedApiKey) {
-        return res.status(403).json({ error: "Unauthorized", received: apiKey });
-    }
-    next();
+  console.log("🔍 Headers received in request:", req.headers); // Logs all headers
+  console.log("🔍 Received API Key:", apiKey || "None"); // Logs received key
+  console.log("🔍 Expected API Key:", expectedApiKey ? "****" + expectedApiKey.slice(-4) : "Not Set"); // Masks expected key
+
+  if (!expectedApiKey) {
+      console.error("❌ API_KEY is not set in Render environment variables.");
+      return res.status(500).json({ error: "Server misconfiguration: API_KEY is not set." });
+  }
+
+  if (!apiKey || apiKey !== expectedApiKey) {
+      console.error("❌ Unauthorized access attempt detected.");
+      return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  next();
 };
+
 
 // ✅ Check Server Status
 app.get("/", (req, res) => {
