@@ -21,21 +21,25 @@ if (!fs.existsSync("public")) {
 
 // ✅ Authentication Middleware (Declared before usage)
 const authenticate = (req, res, next) => {
-    const apiKey = req.headers["x-api-key"];
-    const expectedApiKey = process.env.API_KEY;
+  const apiKey = req.headers["x-api-key"];
+  const expectedApiKey = process.env.API_KEY;
 
-    if (!expectedApiKey) {
-        console.error("❌ API_KEY is not set in the Render environment variables.");
-        return res.status(500).json({ error: "Server misconfiguration: API_KEY is not set." });
-    }
+  console.log("🔍 Received API Key:", apiKey || "None");
+  console.log("🔍 Expected API Key:", expectedApiKey ? "****" + expectedApiKey.slice(-4) : "Not Set");
 
-    if (!apiKey || apiKey !== expectedApiKey) {
-        console.error("❌ Unauthorized access attempt detected.");
-        return res.status(403).json({ error: "Unauthorized" });
-    }
+  if (!expectedApiKey) {
+      console.error("❌ API_KEY is not set in Render environment variables.");
+      return res.status(500).json({ error: "Server misconfiguration: API_KEY is not set." });
+  }
 
-    next();
+  if (!apiKey || apiKey !== expectedApiKey) {
+      console.error("❌ Unauthorized access attempt detected.");
+      return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  next();
 };
+
 
 // ✅ Retrieve Reader ID Securely
 app.get("/get-reader-id", authenticate, (req, res) => {

@@ -24,7 +24,10 @@ async function getApiKey() {
 // ✅ Securely fetch Reader ID from backend
 async function getReaderId() {
     try {
-        const apiKey = await getApiKey();
+        const apiKey = await getApiKey(); // ✅ Fetch API key first
+
+        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4));
+
         const response = await fetch("/get-reader-id", {
             method: "GET",
             headers: {
@@ -34,7 +37,7 @@ async function getReaderId() {
         });
 
         if (!response.ok) {
-            console.error(`❌ Reader ID Request Failed: ${response.status} ${response.statusText}`);
+            console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
             return "";
         }
 
@@ -46,6 +49,7 @@ async function getReaderId() {
         return "";
     }
 }
+
 
 // ✅ Initiate Payment Request
 async function initiatePayment() {
