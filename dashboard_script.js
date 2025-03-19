@@ -85,7 +85,7 @@ async function initiatePayment() {
         }
 
         console.log("🔍 Sending API Key in Payment Request:", "****" + apiKey.slice(-4));
-        console.log("🔍 Reader ID in Payment Request:", readerId);
+        console.log("🔍 Reader ID Retrieved:", readerId ? "****" + readerId.slice(-4) : "None");
 
         const response = await fetch("/create_payment_intent", {
             method: "POST",
