@@ -51,6 +51,7 @@ async function initiatePayment() {
             statusText.innerText = "❌ Error: " + result.error;
         } else {
             statusText.innerText = "✅ Payment request sent to terminal!";
+            document.getElementById("payment_intent_id").value = result.client_secret; // Store Payment Intent ID for refund
         }
     } catch (error) {
         statusText.innerText = "❌ Network error. Please try again.";
