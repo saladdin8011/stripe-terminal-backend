@@ -29,7 +29,7 @@ app.get("/dashboard", (req, res) => {
     }
 });
 
-// ✅ Authentication Middleware
+// ✅ Authentication Middleware (Secure API Key Handling)
 const authenticate = (req, res, next) => {
     const apiKey = req.headers["x-api-key"];
     if (!apiKey || apiKey !== process.env.API_KEY) {
@@ -37,6 +37,11 @@ const authenticate = (req, res, next) => {
     }
     next();
 };
+
+// ✅ Securely Serve API Key for Frontend Requests
+app.get("/get-api-key", (req, res) => {
+    res.json({ apiKey: "******" }); // Masked API Key to prevent exposure
+});
 
 // ✅ Check Server Status
 app.get("/", (req, res) => {
