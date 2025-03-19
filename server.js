@@ -31,11 +31,15 @@ app.get("/dashboard", (req, res) => {
 
 // ✅ Authentication Middleware (Secure API Key Handling)
 const authenticate = (req, res, next) => {
-    const apiKey = req.headers["x-api-key"];
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        return res.status(403).json({ error: "Unauthorized" });
-    }
-    next();
+  const apiKey = req.headers["x-api-key"];
+  
+  console.log("🔍 Received API Key:", apiKey || "None"); // Debugging log
+  console.log("🔍 Expected API Key:", process.env.API_KEY || "Not Set"); // Expected key
+
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+      return res.status(403).json({ error: "Unauthorized", received: apiKey });
+  }
+  next();
 };
 
 // ✅ Securely Serve API Key for Frontend Requests
