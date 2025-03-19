@@ -61,4 +61,65 @@ async function getReaderId() {
     }
 }
 
+// ✅ Initiate Payment Request
+async function initiatePayment() {
+    const amount = document.getElementById("amount").value;
+    const statusText = document.getElementById("payment_status");
+    const paymentIntentField = document.getElementById("payment_intent_id");
+
+    if (!amount || amount <= 0) {
+        statusText.innerText = "❌ Please enter a valid amount.";
+        return;
+    }
+
+    statusText.innerText = "⌛ Payment pending... Waiting for Stripe confirmation.";
+
+    try {
+        const apiKey = await getApiKey();
+        const readerId = await getReaderId();
+
+        if (!readerId) {
+            console.error("❌ Reader ID is missing!");
+            statusText.innerText = "❌ No reader ID found. Please check the POS connection.";
+            return;
+        }
+
+        console.log("🔍 Sending API Key in Payment Request:", "****" + apiKey.slice(-4));
+        console.log("🔍 Reader ID in Payment Request:", readerId);
+
+        const response = await fetch("/create_payment_intent", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" }) // ✅ Ensure reader_id is included
+        });
+
+        if (!response.ok) {
+            console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
+            statusText.innerText = `❌ ${response.statusText}`;
+            return;
+        }
+
+        const result = await response.json();
+        console.log("✅ Payment Intent Created:", result);
+
+        if (result.error) {
+            statusText.innerText = "❌ Error: " + result.error;
+        } else {
+            statusText.innerText = "✅ Payment request sent to terminal! Waiting for Stripe confirmation...";
+            if (paymentIntentField) {
+                paymentIntentField.value = result.client_secret;
+            } else {
+                console.warn("⚠️ payment_intent_id field not found in DOM.");
+            }
+            await checkPaymentStatus(result.client_secret, statusText);
+        }
+    } catch (error) {
+        console.error("❌ Network error:", error);
+        statusText.innerText = "⚠️ Payment may have been successful. Please check Stripe.";
+    }
+}
+
 // ✅ Ensure All Functions Are Properly Closed
