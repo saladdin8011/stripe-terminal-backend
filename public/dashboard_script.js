@@ -122,3 +122,42 @@ async function initiatePayment() {
         statusText.innerText = "⚠️ Payment may have been successful. Please check Stripe.";
     }
 }
+// ✅ Cancel Transaction on POS
+async function cancelTransaction() {
+    const statusText = document.getElementById("cancel_status");
+    if (!statusText) {
+        console.error("❌ cancel_status element not found in the DOM.");
+        return;
+    }
+    statusText.innerText = "⌛ Cancelling transaction on POS...";
+
+    try {
+        const apiKey = await getApiKey();
+        const readerId = await getReaderId();
+
+        if (!readerId) {
+            statusText.innerText = "❌ Reader ID not found. Cannot cancel transaction.";
+            return;
+        }
+
+        console.log("🔍 Sending Cancel Request to POS:", "****" + readerId.slice(-4)); // Mask Reader ID in logs
+
+        const response = await fetch("/cancel_payment", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({ reader_id: readerId })
+        });
+
+        const result = await response.json();
+        if (result.error) {
+            statusText.innerText = "❌ Error: " + result.error;
+        } else {
+            statusText.innerText = `✅ Transaction Canceled Successfully on POS`;
+        }
+    } catch (error) {
+        statusText.innerText = "❌ Network error. Please try again.";
+    }
+}
