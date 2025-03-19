@@ -4,35 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stripe Terminal Dashboard</title>
-    <link rel="stylesheet" href="dashboard_styles.css"> <!-- Include the CSS file -->
+    <script defer src="dashboard_script.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h2>Stripe Terminal - Payment Dashboard</h2>
-
-        <!-- Payment Section -->
-        <div class="section">
-            <h3>Initiate Payment</h3>
-            <label for="amount">Enter Amount (£):</label>
-            <input type="number" id="amount" placeholder="Enter amount">
-            <button id="startPayment">Start Payment</button>
-            <p id="payment_status"></p>
-        </div>
-
-        <!-- Refund Section -->
-        <div class="section">
-            <h3>Process Refund</h3>
-            <label for="payment_intent_id">Payment Intent ID:</label>
-            <input type="text" id="payment_intent_id" placeholder="Enter Payment Intent ID">
-
-            <label for="refund_amount">Refund Amount (£) (optional):</label>
-            <input type="number" id="refund_amount" placeholder="Full refund if left empty">
-
-            <button id="refundPayment">Refund Payment</button>
-            <p id="refund_status"></p>
-        </div>
-    </div>
+    <h1>Stripe Terminal Dashboard</h1>
     
-    <script src="dashboard_script.js"></script> <!-- Include JavaScript file -->
+    <h2>Process Payment</h2>
+    <label for="amount">Amount (£):</label>
+    <input type="number" id="amount" placeholder="Enter amount">
+    <label for="reader_id">Reader ID:</label>
+    <input type="text" id="reader_id" placeholder="Enter Reader ID">
+    <button id="startPayment">Start Payment</button>
+    <p id="payment_status"></p>
+    
+    <h2>Cancel Transaction</h2>
+    <label for="payment_intent_id">Payment Intent ID:</label>
+    <input type="text" id="payment_intent_id" placeholder="Enter Payment Intent ID">
+    <button id="cancelPayment">Cancel Transaction</button>
+    <p id="cancel_status"></p>
+    
+    <h2>Refund Payment</h2>
+    <label for="refund_amount">Refund Amount (£):</label>
+    <input type="number" id="refund_amount" placeholder="Enter Refund Amount (optional)">
+    <button id="refundPayment">Refund Payment</button>
+    <p id="refund_status"></p>
 </body>
 </html>
