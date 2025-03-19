@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () { 
     document.getElementById("startPayment").addEventListener("click", initiatePayment);
     document.getElementById("refundPayment").addEventListener("click", processRefund);
     document.getElementById("cancelPayment").addEventListener("click", cancelTransaction);
@@ -24,7 +24,7 @@ async function getApiKey() {
 // ✅ Securely fetch Reader ID from backend
 async function getReaderId() {
     try {
-        const apiKey = await getApiKey(); // ✅ Fetch API key first
+        const apiKey = await getApiKey();
 
         console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4));
 
@@ -47,88 +47,6 @@ async function getReaderId() {
     } catch (error) {
         console.error("❌ Error fetching Reader ID:", error);
         return "";
-    }
-}
-
-
-// ✅ Initiate Payment Request
-async function initiatePayment() {
-    const amount = document.getElementById("amount").value;
-    const statusText = document.getElementById("payment_status");
-
-    if (!amount || amount <= 0) {
-        statusText.innerText = "❌ Please enter a valid amount.";
-        return;
-    }
-
-    statusText.innerText = "⌛ Processing payment...";
-
-    try {
-        const apiKey = await getApiKey();
-        const readerId = await getReaderId();
-
-        if (!readerId) {
-            statusText.innerText = "❌ Reader ID not found. Please try again.";
-            return;
-        }
-
-        const response = await fetch("/create_payment_intent", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey
-            },
-            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
-        });
-
-        const result = await response.json();
-        if (result.error) {
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = "✅ Payment request sent to terminal!";
-            document.getElementById("payment_intent_id").value = result.client_secret;
-        }
-    } catch (error) {
-        statusText.innerText = "❌ Network error. Please try again.";
-    }
-}
-
-// ✅ Process Refund Request
-async function processRefund() {
-    const paymentIntentId = document.getElementById("payment_intent_id").value;
-    const refundAmount = document.getElementById("refund_amount").value;
-    const statusText = document.getElementById("refund_status");
-
-    if (!paymentIntentId) {
-        statusText.innerText = "❌ Please enter a Payment Intent ID.";
-        return;
-    }
-
-    statusText.innerText = "⌛ Processing refund...";
-
-    try {
-        const apiKey = await getApiKey();
-
-        const response = await fetch("/refund_payment", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey
-            },
-            body: JSON.stringify({
-                payment_intent_id: paymentIntentId,
-                amount: refundAmount ? refundAmount * 100 : null
-            })
-        });
-
-        const result = await response.json();
-        if (result.error) {
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = `✅ Refund ${result.status} for ${paymentIntentId}`;
-        }
-    } catch (error) {
-        statusText.innerText = "❌ Network error. Please try again.";
     }
 }
 
