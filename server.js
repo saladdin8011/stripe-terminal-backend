@@ -29,23 +29,23 @@ app.get("/dashboard", (req, res) => {
     }
 });
 
-// ✅ Authentication Middleware (Secure API Key Handling)
+// ✅ Authentication Middleware with API Key Debugging
 const authenticate = (req, res, next) => {
-  const apiKey = req.headers["x-api-key"];
-  
-  console.log("🔍 Received API Key:", apiKey || "None"); // Debugging log
-  console.log("🔍 Expected API Key:", process.env.API_KEY || "Not Set"); // Expected key
+    const apiKey = req.headers["x-api-key"];
+    const expectedApiKey = process.env.API_KEY;
+    
+    console.log("🔍 Received API Key:", apiKey || "None"); // Debugging log
+    console.log("🔍 Expected API Key:", expectedApiKey || "Not Set"); // Expected key
 
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-      return res.status(403).json({ error: "Unauthorized", received: apiKey });
-  }
-  next();
+    if (!expectedApiKey) {
+        return res.status(500).json({ error: "Server misconfiguration: API_KEY is not set." });
+    }
+    
+    if (!apiKey || apiKey !== expectedApiKey) {
+        return res.status(403).json({ error: "Unauthorized", received: apiKey });
+    }
+    next();
 };
-
-// ✅ Securely Serve API Key for Frontend Requests
-app.get("/get-api-key", (req, res) => {
-    res.json({ apiKey: "******" }); // Masked API Key to prevent exposure
-});
 
 // ✅ Check Server Status
 app.get("/", (req, res) => {
@@ -126,39 +126,6 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-});
-
-// ✅ Refund a Payment
-app.post("/refund_payment", authenticate, async (req, res) => {
-    try {
-        let { payment_intent_id, amount } = req.body;
-        if (!payment_intent_id) {
-            return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
-        }
-        const refund = await stripe.refunds.create({
-            payment_intent: payment_intent_id,
-            amount: amount || undefined,
-        });
-        res.json({ refund_id: refund.id, status: refund.status, message: `Refund ${refund.status} for payment intent ${payment_intent_id}` });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// ✅ Handle Failed Payments (Stripe Webhook)
-app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-    let event;
-    try {
-        event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-        return res.status(400).json({ error: `Webhook Error: ${err.message}` });
-    }
-    if (event.type === "payment_intent.payment_failed") {
-        const paymentIntent = event.data.object;
-        console.log(`❌ Payment Failed: ${paymentIntent.id} - Reason: ${paymentIntent.last_payment_error?.message}`);
-        return res.status(200).json({ message: `Handled payment failure for ${paymentIntent.id}` });
-    }
-    res.status(200).json({ received: true });
 });
 
 // ✅ Start the server
