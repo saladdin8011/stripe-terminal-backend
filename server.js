@@ -27,17 +27,22 @@ app.post("/create_connection_token", authenticate, async (req, res) => {
 
 app.post("/create_payment_intent", authenticate, async (req, res) => {
     try {
-      let { amount, currency } = req.body;
+      let { amount, currency, reader_id } = req.body;
   
       // ✅ Default to £1 (100 pence) if amount is missing
       if (!amount) {
         amount = 100;
       }
-      
       if (!currency) {
         currency = "GBP";
       }
+      
+      // ✅ Ensure a reader_id is provided
+      if (!reader_id) {
+        return res.status(400).json({ error: "Reader ID is required to process the payment" });
+      }
   
+      // ✅ Create the Payment Intent
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency,
@@ -45,11 +50,20 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
         capture_method: "manual",
       });
   
-      res.json({ client_secret: paymentIntent.client_secret });
+      // ✅ Assign the Payment Intent to the WisePOS E Reader
+      const action = await stripe.terminal.readers.processPaymentIntent(reader_id, {
+        payment_intent: paymentIntent.id,
+      });
+  
+      res.json({
+        client_secret: paymentIntent.client_secret,
+        reader_action: action,
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
+  
   
 
 // ✅ Start the server
