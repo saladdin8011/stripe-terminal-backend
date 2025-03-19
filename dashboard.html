@@ -3,53 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Terminal Payment</title>
+    <title>Stripe Terminal Dashboard</title>
+    <link rel="stylesheet" href="dashboard_styles.css"> <!-- Include the CSS file -->
 </head>
 <body>
-    <h2>Stripe Terminal - Start Payment</h2>
-    
-    <label for="reader_id">Select Reader:</label>
-    <select id="reader_id">
-        <option value="tmr_xxxxxxxxxxxxxxx">Reader 1</option>
-        <option value="tmr_yyyyyyyyyyyyyy">Reader 2</option>
-    </select>
+    <div class="container">
+        <h2>Stripe Terminal - Payment Dashboard</h2>
 
-    <label for="amount">Enter Amount (£):</label>
-    <input type="number" id="amount" placeholder="Enter amount">
+        <!-- Payment Section -->
+        <div class="section">
+            <h3>Initiate Payment</h3>
+            <label for="reader_id">Select Reader:</label>
+            <select id="reader_id">
+                <option value="tmr_xxxxxxxxxxxxxxx">Reader 1</option>
+                <option value="tmr_yyyyyyyyyyyyyy">Reader 2</option>
+            </select>
 
-    <button onclick="initiatePayment()">Start Payment</button>
+            <label for="amount">Enter Amount (£):</label>
+            <input type="number" id="amount" placeholder="Enter amount">
 
-    <p id="status"></p>
+            <button onclick="initiatePayment()">Start Payment</button>
 
-    <script>
-        async function initiatePayment() {
-            const readerId = document.getElementById("reader_id").value;
-            const amount = document.getElementById("amount").value;
-            const statusText = document.getElementById("status");
+            <p id="payment_status"></p>
+        </div>
 
-            if (!readerId || !amount) {
-                statusText.innerText = "Please select a reader and enter an amount.";
-                return;
-            }
+        <!-- Refund Section -->
+        <div class="section">
+            <h3>Process Refund</h3>
+            <label for="payment_intent_id">Payment Intent ID:</label>
+            <input type="text" id="payment_intent_id" placeholder="Enter Payment Intent ID">
 
-            statusText.innerText = "Processing payment...";
+            <label for="refund_amount">Refund Amount (£) (optional):</label>
+            <input type="number" id="refund_amount" placeholder="Full refund if left empty">
 
-            const response = await fetch("/initiate_payment", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": "your_secure_api_key_here"
-                },
-                body: JSON.stringify({ reader_id: readerId, amount: amount * 100 }) // Convert to pence
-            });
+            <button onclick="processRefund()">Refund Payment</button>
 
-            const result = await response.json();
-            if (result.error) {
-                statusText.innerText = "Error: " + result.error;
-            } else {
-                statusText.innerText = "Payment request sent to terminal!";
-            }
-        }
-    </script>
+            <p id="refund_status"></p>
+        </div>
+    </div>
+
+    <script src="dashboard_script.js"></script> <!-- Include JavaScript file -->
 </body>
 </html>

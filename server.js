@@ -11,10 +11,11 @@ middleware(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.raw({ type: "application/json" })); // Required for webhooks
+app.use(express.static("public")); // Serve static files for CSS & JS
 
 // ✅ Serve the Payment Dashboard
 app.get("/dashboard", (req, res) => {
-    res.sendFile(path.join(__dirname, "dashboard.html"));
+    res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
 // ✅ Authentication Middleware
