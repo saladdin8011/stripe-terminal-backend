@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("startPayment").addEventListener("click", initiatePayment);
-    document.getElementById("refundPayment").addEventListener("click", processRefund);
     document.getElementById("cancelPayment").addEventListener("click", cancelTransaction);
 });
 
@@ -93,7 +92,7 @@ async function initiatePayment() {
     }
 }
 
-// ✅ Process Refund Request
+/*// ✅ Process Refund Request
 async function processRefund() {
     const paymentIntentId = document.getElementById("payment_intent_id").value;
     const refundAmount = document.getElementById("refund_amount").value;
@@ -130,7 +129,7 @@ async function processRefund() {
     } catch (error) {
         statusText.innerText = "❌ Network error. Please try again.";
     }
-}
+}*/
 
 // ✅ Cancel Transaction on POS
 async function cancelTransaction() {
