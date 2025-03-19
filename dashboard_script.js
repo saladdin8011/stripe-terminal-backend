@@ -3,10 +3,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("refundPayment").addEventListener("click", processRefund);
 });
 
+// ✅ Securely fetch API Key from backend
 async function getApiKey() {
     try {
         const response = await fetch("/get-api-key");
         const data = await response.json();
+        
+        console.log("🔍 API Key Response from Backend:", data); // Log full response
+
         if (!data.apiKey) {
             console.error("❌ API key not received from backend.");
         }
@@ -17,6 +21,7 @@ async function getApiKey() {
     }
 }
 
+// ✅ Initiate Payment Request
 async function initiatePayment() {
     const amount = document.getElementById("amount").value;
     const statusText = document.getElementById("payment_status");
@@ -52,6 +57,7 @@ async function initiatePayment() {
     }
 }
 
+// ✅ Process Refund Request
 async function processRefund() {
     const paymentIntentId = document.getElementById("payment_intent_id").value;
     const refundAmount = document.getElementById("refund_amount").value;
