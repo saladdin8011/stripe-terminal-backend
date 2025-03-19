@@ -100,6 +100,21 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// Check payment status from stripe
+app.get("/check_payment_status", authenticate, async (req, res) => {
+  try {
+      const { payment_intent_id } = req.query;
+      if (!payment_intent_id) {
+          return res.status(400).json({ error: "Payment Intent ID is required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+      res.json({ status: paymentIntent.status });
+  } catch (error) {
+      console.error("❌ Error fetching payment status:", error);
+      res.status(500).json({ error: error.message });
+  }
+});
 
 // ✅ Cancel a Payment on POS
 app.post("/cancel_payment", authenticate, async (req, res) => {
