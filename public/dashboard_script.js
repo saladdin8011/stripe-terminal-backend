@@ -110,11 +110,15 @@ async function initiatePayment() {
         } else {
             statusText.innerText = "✅ Payment request sent to terminal! Waiting for Stripe confirmation...";
             
-            if (paymentIntentField) {
-                paymentIntentField.value = result.client_secret;
-            } else {
-                console.warn("⚠️ payment_intent_id field not found in DOM.");
+            // Ensure payment_intent_id exists in the DOM before assigning value
+            if (!paymentIntentField) {
+                console.warn("⚠️ payment_intent_id field not found in DOM. Creating it dynamically.");
+                paymentIntentField = document.createElement("input");
+                paymentIntentField.type = "hidden";
+                paymentIntentField.id = "payment_intent_id";
+                document.body.appendChild(paymentIntentField);
             }
+paymentIntentField.value = result.client_secret;
             await checkPaymentStatus(result.client_secret, statusText);
         }
     } catch (error) {
