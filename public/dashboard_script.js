@@ -12,10 +12,12 @@ document.addEventListener("DOMContentLoaded", function () {
         statusText.innerText = "⌛ Processing payment...";
 
         try {
+            const apiKey = await getApiKey(); // Retrieve API Key dynamically
             const response = await fetch("/create_payment_intent", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey
                 },
                 body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" }) // Convert to pence
             });
@@ -44,10 +46,12 @@ document.addEventListener("DOMContentLoaded", function () {
         statusText.innerText = "⌛ Processing refund...";
 
         try {
+            const apiKey = await getApiKey(); // Retrieve API Key dynamically
             const response = await fetch("/refund_payment", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey
                 },
                 body: JSON.stringify({
                     payment_intent_id: paymentIntentId,
@@ -66,3 +70,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+// ✅ Function to retrieve API Key from backend securely
+async function getApiKey() {
+    try {
+        const response = await fetch("/get-api-key");
+        const data = await response.json();
+        return data.apiKey || "";
+    } catch {
+        return "";
+    }
+}
