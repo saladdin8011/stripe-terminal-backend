@@ -100,40 +100,59 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
 
 // ✅ Refund a Payment
 app.post("/refund_payment", authenticate, async (req, res) => {
+    try {
+        let { payment_intent_id, amount } = req.body;
+        console.log("🔍 Refund Request Received:", req.body);
+        
+        if (!payment_intent_id) {
+            console.error("❌ Missing Payment Intent ID");
+            return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
+        }
+
+        const refund = await stripe.refunds.create({
+            payment_intent: payment_intent_id,
+            amount: amount ? amount * 100 : undefined,
+        });
+
+        console.log("✅ Refund Successful:", refund);
+        res.json({ refund_id: refund.id, status: refund.status, message: `Refund ${refund.status} for payment intent ${payment_intent_id}` });
+    } catch (error) {
+        console.error("❌ Refund Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ✅ Cancel a Payment
+app.post("/cancel_payment", authenticate, async (req, res) => {
   try {
-      let { payment_intent_id, amount, reason } = req.body;
-      console.log("🔍 Refund Request Received:", req.body); // ✅ Log request body
+      let { payment_intent_id, reader_id } = req.body;
+      console.log("🔍 Cancel Request Received:", req.body);
 
       if (!payment_intent_id) {
           console.error("❌ Missing Payment Intent ID");
-          return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
+          return res.status(400).json({ error: "Payment Intent ID is required to cancel a transaction" });
+      }
+      if (!reader_id) {
+          console.error("❌ Missing Reader ID");
+          return res.status(400).json({ error: "Reader ID is required to cancel the transaction on the POS" });
       }
 
-      if (amount && amount <= 0) {
-          console.error("❌ Invalid Refund Amount");
-          return res.status(400).json({ error: "Refund amount must be greater than 0" });
-      }
+      // Cancel the payment intent
+      const cancelIntent = await stripe.paymentIntents.cancel(payment_intent_id);
+      console.log("✅ Payment Intent Canceled:", cancelIntent);
 
-      const refundParams = {
-          payment_intent: payment_intent_id,
-          amount: amount ? amount * 100 : undefined, // Convert to cents if amount is provided
-          reason: reason || "requested_by_customer" // Default reason if not provided
-      };
-
-      console.log("🔍 Processing Refund with:", refundParams);
-
-      const refund = await stripe.refunds.create(refundParams);
-
-      console.log("✅ Refund Successful:", refund); // ✅ Log refund response
+      // Cancel the action on the WisePOS E reader
+      const cancelReaderAction = await stripe.terminal.readers.cancelAction(reader_id);
+      console.log("✅ POS Reader Transaction Canceled:", cancelReaderAction);
 
       res.json({
-          refund_id: refund.id,
-          status: refund.status,
-          message: `Refund ${refund.status} for payment intent ${payment_intent_id}`
+          message: "Transaction canceled successfully on Stripe and POS",
+          payment_intent_id,
+          reader_id,
       });
   } catch (error) {
-      console.error("❌ Refund Error:", error); // ✅ Log backend errors
-      res.status(500).json({ error: error.message, details: error });
+      console.error("❌ Cancel Error:", error);
+      res.status(500).json({ error: error.message });
   }
 });
 
