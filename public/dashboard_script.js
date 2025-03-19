@@ -113,11 +113,13 @@ async function initiatePayment() {
             // Ensure payment_intent_id exists in the DOM before assigning value
             if (!paymentIntentField) {
                 console.warn("⚠️ payment_intent_id field not found in DOM. Creating it dynamically.");
-                paymentIntentField = document.createElement("input");
-                paymentIntentField.type = "hidden";
-                paymentIntentField.id = "payment_intent_id";
-                document.body.appendChild(paymentIntentField);
+                let newField = document.createElement("input"); // ✅ Use a new variable
+                newField.type = "hidden";
+                newField.id = "payment_intent_id";
+                document.body.appendChild(newField);
+                paymentIntentField = newField; // ✅ Assign the newly created element
             }
+            
 paymentIntentField.value = result.client_secret;
             await checkPaymentStatus(result.client_secret, statusText);
         }
