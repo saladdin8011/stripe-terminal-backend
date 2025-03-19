@@ -75,7 +75,14 @@ async function processRefund() {
     try {
         const apiKey = await getApiKey();
         console.log("🔍 Sending API Key in refund request:", apiKey || "None");
-        console.log("🔍 Sending Refund Request to /refund_payment:", { payment_intent_id: paymentIntentId, amount: refundAmount });
+
+        const refundRequestBody = {
+            payment_intent_id: paymentIntentId,
+            amount: refundAmount ? parseInt(refundAmount) * 100 : null,
+            reason: "requested_by_customer" // Default refund reason
+        };
+
+        console.log("🔍 Sending Refund Request:", refundRequestBody);
 
         const response = await fetch("/refund_payment", {
             method: "POST",
@@ -83,10 +90,7 @@ async function processRefund() {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey
             },
-            body: JSON.stringify({
-                payment_intent_id: paymentIntentId,
-                amount: refundAmount ? parseInt(refundAmount) * 100 : null
-            })
+            body: JSON.stringify(refundRequestBody)
         });
 
         if (!response.ok) {
@@ -107,4 +111,3 @@ async function processRefund() {
         statusText.innerText = "❌ Network error. Please try again.";
     }
 }
-
