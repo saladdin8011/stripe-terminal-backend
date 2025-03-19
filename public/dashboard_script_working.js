@@ -27,6 +27,7 @@ async function getApiKey() {
             return "";
         }
         const data = await response.json();
+        console.log("🔍 API Key Retrieved from Backend:", data.apiKey ? "****" + data.apiKey.slice(-4) : "None"); // Mask API key
         return data.apiKey || "";
     } catch (error) {
         console.error("❌ Error fetching API key:", error);
@@ -34,7 +35,7 @@ async function getApiKey() {
     }
 }
 
-// ✅ Securely fetch Reader ID from backend
+// ✅ Securely fetch Reader ID
 async function getReaderId() {
     try {
         const apiKey = await getApiKey();
@@ -52,6 +53,7 @@ async function getReaderId() {
         }
 
         const data = await response.json();
+        console.log("🔍 Reader ID Retrieved:", data.reader_id ? "****" + data.reader_id.slice(-4) : "None");
         return data.reader_id || "";
     } catch (error) {
         console.error("❌ Error fetching Reader ID:", error);
@@ -63,6 +65,7 @@ async function getReaderId() {
 async function initiatePayment() {
     const amount = document.getElementById("amount").value;
     const statusText = document.getElementById("payment_status");
+    const paymentIntentField = document.getElementById("payment_intent_id");
 
     if (!amount || amount <= 0) {
         statusText.innerText = "❌ Please enter a valid amount.";
@@ -76,11 +79,13 @@ async function initiatePayment() {
         const readerId = await getReaderId();
 
         if (!readerId) {
-            statusText.innerText = "❌ Reader ID not found. Please try again.";
+            console.error("❌ Reader ID is missing!");
+            statusText.innerText = "❌ No reader ID found. Please check the POS connection.";
             return;
         }
 
-        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4)); // Mask API key in logs
+        console.log("🔍 Sending API Key in Payment Request:", "****" + apiKey.slice(-4));
+        console.log("🔍 Reader ID in Payment Request:", readerId);
 
         const response = await fetch("/create_payment_intent", {
             method: "POST",
@@ -88,26 +93,27 @@ async function initiatePayment() {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey
             },
-            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
+            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" }) // ✅ Ensure reader_id is included
         });
 
-        // ✅ Check if the response is valid before handling it
         if (!response.ok) {
             console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
-            statusText.innerText = `❌ Error: ${response.statusText}`;
+            statusText.innerText = `❌ ${response.statusText}`;
             return;
         }
 
         const result = await response.json();
-        console.log("✅ Stripe Response:", result); // Log the response
+        console.log("✅ Payment Intent Created:", result);
 
         if (result.error) {
             statusText.innerText = "❌ Error: " + result.error;
         } else {
             statusText.innerText = "✅ Payment request sent to terminal! Waiting for Stripe confirmation...";
-            document.getElementById("payment_intent_id").value = result.client_secret;
-
-            // ✅ Poll for payment confirmation
+            if (paymentIntentField) {
+                paymentIntentField.value = result.client_secret;
+            } else {
+                console.warn("⚠️ payment_intent_id field not found in DOM.");
+            }
             await checkPaymentStatus(result.client_secret, statusText);
         }
     } catch (error) {
@@ -115,56 +121,13 @@ async function initiatePayment() {
         statusText.innerText = "⚠️ Payment may have been successful. Please check Stripe.";
     }
 }
-
-async function checkPaymentStatus(paymentIntentId, statusText) {
-    try {
-        const apiKey = await getApiKey();
-        let attempts = 0;
-
-        while (attempts < 6) { // Check payment status up to 6 times (30 seconds total)
-            console.log(`🔍 Checking payment status for ${paymentIntentId} (Attempt ${attempts + 1})`);
-
-            const response = await fetch(`/check_payment_status?payment_intent_id=${paymentIntentId}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": apiKey
-                }
-            });
-
-            if (!response.ok) {
-                console.error("❌ Error fetching payment status:", response.statusText);
-                statusText.innerText = "⚠️ Unable to verify payment status. Please check Stripe.";
-                return;
-            }
-
-            const result = await response.json();
-            console.log("🔍 Payment Status Response:", result);
-
-            if (result.status === "succeeded") {
-                statusText.innerText = "✅ Payment successful!";
-                return;
-            } else if (result.status === "requires_payment_method") {
-                statusText.innerText = "❌ Payment failed. Please try again.";
-                return;
-            }
-
-            // ✅ Wait 5 seconds before checking again
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            attempts++;
-        }
-
-        statusText.innerText = "⚠️ Payment status unknown. Please check Stripe.";
-    } catch (error) {
-        console.error("❌ Error checking payment status:", error);
-        statusText.innerText = "⚠️ Error retrieving payment status.";
-    }
-}
-
-
 // ✅ Cancel Transaction on POS
 async function cancelTransaction() {
     const statusText = document.getElementById("cancel_status");
+    if (!statusText) {
+        console.error("❌ cancel_status element not found in the DOM.");
+        return;
+    }
     statusText.innerText = "⌛ Cancelling transaction on POS...";
 
     try {
@@ -197,3 +160,66 @@ async function cancelTransaction() {
         statusText.innerText = "❌ Network error. Please try again.";
     }
 }
+
+// ✅ Check Payment Status
+async function checkPaymentStatus(paymentIntentId, statusText) {
+    if (!paymentIntentId) {
+        console.error("❌ Missing Payment Intent ID in checkPaymentStatus");
+        return;
+    }
+    try {
+        const apiKey = await getApiKey();
+        console.log("🔍 Sending API Key in checkPaymentStatus:", "****" + apiKey.slice(-4));
+
+        const response = await fetch(`/check_payment_status?payment_intent_id=${paymentIntentId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            }
+        });
+
+        if (!response.ok) {
+            console.error("❌ Server responded with:", response.statusText);
+            statusText.innerText = "⚠️ Unable to verify payment status. Please check Stripe.";
+            return;
+        }
+
+        const result = await response.json();
+        console.log("🔍 Payment Status Response:", result);
+
+        if (result.status === "succeeded") {
+            statusText.innerText = "✅ Payment successful!";
+            return;
+        } else if (result.status === "requires_payment_method") {
+            statusText.innerText = "❌ Payment failed. Please try again.";
+            return;
+        }
+
+        statusText.innerText = "⚠️ Payment status unknown. Please check Stripe.";
+    } catch (error) {
+        console.error("❌ Error checking payment status:", error);
+        statusText.innerText = "⚠️ Error retrieving payment status.";
+    }
+}
+
+// ✅ Ensure event listeners are attached after function definitions
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ DOM fully loaded. Attaching event listeners...");
+
+    const startPaymentBtn = document.getElementById("startPayment");
+    const cancelPaymentBtn = document.getElementById("cancelPayment");
+
+    if (startPaymentBtn) {
+        startPaymentBtn.addEventListener("click", initiatePayment);
+    } else {
+        console.error("❌ startPayment button not found in the DOM.");
+    }
+
+    if (cancelPaymentBtn) {
+        cancelPaymentBtn.addEventListener("click", cancelTransaction);
+    } else {
+        console.error("❌ cancelPayment button not found in the DOM.");
+    }
+});
+// ✅ Ensure All Functions Are Properly Closed
