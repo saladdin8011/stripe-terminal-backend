@@ -40,7 +40,6 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-
 // ✅ Retrieve Reader ID Securely
 app.get("/get-reader-id", authenticate, (req, res) => {
     const readerId = process.env.READER_ID;
@@ -98,6 +97,31 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
 
         res.json({ client_secret: paymentIntent.client_secret, reader_action: action, message: "Payment request sent to the WisePOS E reader." });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ✅ Cancel a Payment on POS
+app.post("/cancel_payment", authenticate, async (req, res) => {
+    try {
+        let { reader_id } = req.body;
+        console.log("🔍 Cancel Request Received:", req.body);
+
+        if (!reader_id) {
+            console.error("❌ Missing Reader ID");
+            return res.status(400).json({ error: "Reader ID is required to cancel the transaction on the POS" });
+        }
+
+        // ✅ Cancel the action on the WisePOS E reader
+        const cancelReaderAction = await stripe.terminal.readers.cancelAction(reader_id);
+        console.log("✅ POS Reader Transaction Canceled:", cancelReaderAction);
+
+        res.json({
+            message: "Transaction canceled successfully on POS",
+            reader_id,
+        });
+    } catch (error) {
+        console.error("❌ Cancel Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
