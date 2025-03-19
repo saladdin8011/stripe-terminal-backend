@@ -1,4 +1,3 @@
-// ✅ Ensure initiatePayment is defined before event listeners
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ DOM fully loaded. Attaching event listeners...");
 
@@ -19,71 +18,112 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// ✅ Define initiatePayment before it is called
-async function initiatePayment() {
-    const amount = document.getElementById("amount").value;
-    const statusText = document.getElementById("payment_status");
-    const paymentIntentField = document.getElementById("payment_intent_id");
+// ✅ Securely fetch API Key from backend
+async function getApiKey() {
+    try {
+        const response = await fetch("/get-api-key");
+        if (!response.ok) {
+            console.error(`❌ API Key Request Failed: ${response.status} ${response.statusText}`);
+            return "";
+        }
+        const data = await response.json();
+        console.log("🔍 API Key Retrieved from Backend:", data.apiKey ? "****" + data.apiKey.slice(-4) : "None"); // Mask API key
+        return data.apiKey || "";
+    } catch (error) {
+        console.error("❌ Error fetching API key:", error);
+        return "";
+    }
+}
 
-    if (!amount || amount <= 0) {
-        statusText.innerText = "❌ Please enter a valid amount.";
+// ✅ Ensure cancelTransaction is defined before usage
+async function cancelTransaction() {
+    const statusText = document.getElementById("cancel_status");
+    if (!statusText) {
+        console.error("❌ cancel_status element not found in the DOM.");
         return;
     }
-
-    statusText.innerText = "⌛ Payment pending... Waiting for Stripe confirmation.";
+    statusText.innerText = "⌛ Cancelling transaction on POS...";
 
     try {
         const apiKey = await getApiKey();
         const readerId = await getReaderId();
 
         if (!readerId) {
-            console.error("❌ Reader ID is missing!");
-            statusText.innerText = "❌ No reader ID found. Please check the POS connection.";
+            statusText.innerText = "❌ Reader ID not found. Cannot cancel transaction.";
             return;
         }
 
-        console.log("🔍 Sending API Key in Payment Request:", "****" + apiKey.slice(-4));
-        console.log("🔍 Reader ID in Payment Request:", readerId);
+        console.log("🔍 Sending Cancel Request to POS:", "****" + readerId.slice(-4)); // Mask Reader ID in logs
 
-        const response = await fetch("/create_payment_intent", {
+        const response = await fetch("/cancel_payment", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey
             },
-            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
+            body: JSON.stringify({ reader_id: readerId })
+        });
+
+        const result = await response.json();
+        if (result.error) {
+            statusText.innerText = "❌ Error: " + result.error;
+        } else {
+            statusText.innerText = `✅ Transaction Canceled Successfully on POS`;
+        }
+    } catch (error) {
+        statusText.innerText = "❌ Network error. Please try again.";
+    }
+}
+
+// ✅ Check Payment Status and Confirm Success with Stripe
+async function checkPaymentStatus(paymentIntentId, statusText) {
+    if (!paymentIntentId) {
+        console.error("❌ Missing Payment Intent ID in checkPaymentStatus");
+        statusText.innerText = "❌ No payment ID found. Cannot check status.";
+        return;
+    }
+    
+    // ✅ Ensure only the payment intent ID is sent (without the secret key)
+    const cleanPaymentIntentId = paymentIntentId.split("_")[0];
+    
+    statusText.innerText = "⌛ Checking payment status...";
+
+    try {
+        const apiKey = await getApiKey();
+        console.log("🔍 Sending API Key in checkPaymentStatus:", "****" + apiKey.slice(-4));
+
+        const response = await fetch(`/check_payment_status?payment_intent_id=${cleanPaymentIntentId}`, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "x-api-key": apiKey
+            }
         });
 
         if (!response.ok) {
-            console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
-            statusText.innerText = `❌ ${response.statusText}`;
+            console.error("❌ Server responded with:", response.statusText);
+            statusText.innerText = "⚠️ Unable to verify payment status. Please check Stripe.";
             return;
         }
 
         const result = await response.json();
-        console.log("✅ Payment Intent Created:", result);
+        console.log("🔍 Payment Status Response from Stripe:", result);
 
-        if (result.error) {
-            statusText.innerText = "❌ Error: " + result.error;
-        } else {
-            statusText.innerText = "✅ Payment request sent to terminal! Waiting for Stripe confirmation...";
-            
-            // ✅ Ensure payment intent field exists before setting value
-            if (paymentIntentField) {
-                paymentIntentField.value = result.client_secret;
-            } else {
-                console.warn("⚠️ payment_intent_id field not found in DOM. Creating it dynamically.");
-                const hiddenInput = document.createElement("input");
-                hiddenInput.type = "hidden";
-                hiddenInput.id = "payment_intent_id";
-                hiddenInput.value = result.client_secret;
-                document.body.appendChild(hiddenInput);
-            }
-
-            await checkPaymentStatus(result.client_secret, statusText);
+        if (result.status === "succeeded") {
+            statusText.innerText = "✅ Payment successful!";
+            return;
+        } else if (result.status === "processing") {
+            statusText.innerText = "⌛ Payment is still processing. Please wait...";
+            setTimeout(() => checkPaymentStatus(cleanPaymentIntentId, statusText), 5000); // Retry after 5 seconds
+            return;
+        } else if (result.status === "requires_payment_method") {
+            statusText.innerText = "❌ Payment failed. Please try again.";
+            return;
         }
+
+        statusText.innerText = "⚠️ Payment status unknown. Please check Stripe.";
     } catch (error) {
-        console.error("❌ Network error:", error);
-        statusText.innerText = "⚠️ Payment may have been successful. Please check Stripe.";
+        console.error("❌ Error checking payment status:", error);
+        statusText.innerText = "⚠️ Error retrieving payment status.";
     }
 }
