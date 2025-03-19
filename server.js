@@ -41,6 +41,18 @@ const authenticate = (req, res, next) => {
     next();
 };
 
+const READER_ID = process.env.READER_ID; // ✅ Load Reader ID securely
+
+if (!READER_ID) {
+    console.error("❌ READER_ID is not set in environment variables!");
+    process.exit(1); // Stop server if READER_ID is missing
+}
+const maskKey = (key) => key ? "****" + key.slice(-4) : "NOT SET";
+
+console.log("🔍 Loaded API Key:", maskKey(process.env.API_KEY));
+console.log("🔍 Loaded READER_ID:", maskKey(process.env.READER_ID));
+
+
 // ✅ Serve the Payment Dashboard
 app.get("/dashboard", (req, res) => {
     const filePath = path.join(__dirname, "public", "dashboard.html");

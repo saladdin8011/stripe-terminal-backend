@@ -21,6 +21,62 @@ async function getApiKey() {
         return "";
     }
 }
+async function getReaderId() {
+    try {
+        const response = await fetch("/get-reader-id");
+        const data = await response.json();
+
+        console.log("🔍 Reader ID Response from Backend:", "****" + data.reader_id.slice(-4)); // ✅ Masked in logs
+
+        if (!data.reader_id) {
+            console.error("❌ Reader ID not received from backend.");
+        }
+        return data.reader_id || "";
+    } catch (error) {
+        console.error("❌ Error fetching Reader ID:", error);
+        return "";
+    }
+}
+
+// ✅ Update Payment Function to Use the Secure Reader ID
+async function initiatePayment() {
+    const amount = document.getElementById("amount").value;
+    const statusText = document.getElementById("payment_status");
+
+    if (!amount) {
+        statusText.innerText = "❌ Please enter an amount.";
+        return;
+    }
+
+    statusText.innerText = "⌛ Processing payment...";
+
+    try {
+        const apiKey = await getApiKey();
+        const readerId = await getReaderId(); // ✅ Fetch Secure Reader ID
+
+        console.log("🔍 Sending API Key in request:", "****" + apiKey.slice(-4)); // ✅ Mask API Key in logs
+
+        const response = await fetch("/create_payment_intent", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" })
+        });
+
+        const result = await response.json();
+        if (result.error) {
+            statusText.innerText = "❌ Error: " + result.error;
+        } else {
+            statusText.innerText = "✅ Payment request sent to terminal!";
+            document.getElementById("payment_intent_id").value = result.client_secret;
+        }
+    } catch (error) {
+        statusText.innerText = "❌ Network error. Please try again.";
+    }
+}
+
 
 // ✅ Initiate Payment Request
 async function initiatePayment() {
