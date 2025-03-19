@@ -34,7 +34,35 @@ async function getApiKey() {
         return "";
     }
 }
+//fetch reader id and log to console
+async function getReaderId() {
+    try {
+        const apiKey = await getApiKey(); // ✅ Fetch API key first
 
+        console.log("🔍 Sending API Key in Reader ID Request:", "****" + apiKey.slice(-4));
+
+        const response = await fetch("/get-reader-id", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`❌ Server responded with: ${response.status} ${response.statusText}`);
+            return "";
+        }
+
+        const data = await response.json();
+        console.log("🔍 Reader ID Retrieved:", data.reader_id ? "****" + data.reader_id.slice(-4) : "None");
+
+        return data.reader_id || "";
+    } catch (error) {
+        console.error("❌ Error fetching Reader ID:", error);
+        return "";
+    }
+}
 // ✅ Initiate Payment Request
 async function initiatePayment() {
     const amount = document.getElementById("amount").value;
@@ -50,7 +78,16 @@ async function initiatePayment() {
 
     try {
         const apiKey = await getApiKey();
-        console.log("🔍 API Key in Payment Request:", apiKey ? "****" + apiKey.slice(-4) : "None");
+        const readerId = await getReaderId();
+
+        if (!readerId) {
+            console.error("❌ Reader ID is missing!");
+            statusText.innerText = "❌ No reader ID found. Please check the POS connection.";
+            return;
+        }
+
+        console.log("🔍 Sending API Key in Payment Request:", "****" + apiKey.slice(-4));
+        console.log("🔍 Reader ID in Payment Request:", readerId);
 
         const response = await fetch("/create_payment_intent", {
             method: "POST",
@@ -58,7 +95,7 @@ async function initiatePayment() {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey
             },
-            body: JSON.stringify({ amount: amount * 100, currency: "GBP" })
+            body: JSON.stringify({ reader_id: readerId, amount: amount * 100, currency: "GBP" }) // ✅ Ensure reader_id is included
         });
 
         if (!response.ok) {

@@ -100,6 +100,21 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+//getreaderid
+app.get("/get-reader-id", authenticate, (req, res) => {
+  const readerId = process.env.READER_ID;
+
+  if (!readerId) {
+      console.error("❌ READER_ID is NOT set in environment variables!");
+      return res.status(500).json({ error: "Reader ID is not set" });
+  }
+
+  console.log("🔍 Securely Providing Reader ID:", "****" + readerId.slice(-4));
+
+  res.json({ reader_id: readerId });
+});
+
+
 // Check payment status from stripe
 app.get("/check_payment_status", authenticate, async (req, res) => {
   try {
