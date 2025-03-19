@@ -98,6 +98,30 @@ app.post("/create_payment_intent", authenticate, async (req, res) => {
     }
 });
 
+// ✅ Refund a Payment
+app.post("/refund_payment", authenticate, async (req, res) => {
+    try {
+        let { payment_intent_id, amount } = req.body;
+        console.log("🔍 Refund Request Received:", req.body);
+        
+        if (!payment_intent_id) {
+            console.error("❌ Missing Payment Intent ID");
+            return res.status(400).json({ error: "Payment Intent ID is required for a refund" });
+        }
+
+        const refund = await stripe.refunds.create({
+            payment_intent: payment_intent_id,
+            amount: amount ? amount * 100 : undefined,
+        });
+
+        console.log("✅ Refund Successful:", refund);
+        res.json({ refund_id: refund.id, status: refund.status, message: `Refund ${refund.status} for payment intent ${payment_intent_id}` });
+    } catch (error) {
+        console.error("❌ Refund Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ✅ Start the server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on Render, listening on port ${PORT}`));
