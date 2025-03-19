@@ -54,3 +54,11 @@ async function getReaderId() {
 
         const data = await response.json();
         console.log("🔍 Reader ID Retrieved:", data.reader_id ? "****" + data.reader_id.slice(-4) : "None");
+        return data.reader_id || "";
+    } catch (error) {
+        console.error("❌ Error fetching Reader ID:", error);
+        return "";
+    }
+}
+
+// ✅ Ensure All Functions Are Properly Closed
