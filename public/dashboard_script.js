@@ -34,13 +34,11 @@ async function getApiKey() {
         return "";
     }
 }
-//fetch reader id and log to console
+
+// ✅ Securely fetch Reader ID
 async function getReaderId() {
     try {
-        const apiKey = await getApiKey(); // ✅ Fetch API key first
-
-        console.log("🔍 Sending API Key in Reader ID Request:", "****" + apiKey.slice(-4));
-
+        const apiKey = await getApiKey();
         const response = await fetch("/get-reader-id", {
             method: "GET",
             headers: {
@@ -56,13 +54,13 @@ async function getReaderId() {
 
         const data = await response.json();
         console.log("🔍 Reader ID Retrieved:", data.reader_id ? "****" + data.reader_id.slice(-4) : "None");
-
         return data.reader_id || "";
     } catch (error) {
         console.error("❌ Error fetching Reader ID:", error);
         return "";
     }
 }
+
 // ✅ Initiate Payment Request
 async function initiatePayment() {
     const amount = document.getElementById("amount").value;
